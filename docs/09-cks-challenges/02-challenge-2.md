@@ -1,6 +1,6 @@
 # CKS Challenge 2
 
-[Take me to the lab!](https://kodekloud.com/topic/lab-challenge-1/)
+[Take me to the lab!](https://learn.kodekloud.com/user/courses/cks-challenges/module/624cd49b-715f-45e8-9959-372425b771a6/lesson/be522d9f-c376-4dc6-8179-d38fbd65ae14)
 
 Please note that the competition status for CKS Challenges is ended. Please do not submit a solution. It will not be scored.
 
@@ -208,15 +208,27 @@ Do the tasks in this order:
         kubectl edit deployment -n prod prod-web
         ```
 
-        Replace the `env` block with
+        Replace the variables under the `env` block with
 
         ```yaml
-        envFrom:
-        - secretRef:
-            name: prod-db
+            - name: DB_User
+              valueFrom:
+                secretKeyRef:
+                  key: DB_User
+                  name: prod-db
+            - name: DB_Host
+              valueFrom:
+                secretKeyRef:
+                  key: DB_Host
+                  name: prod-db
+            - name: DB_Password
+              valueFrom:
+                secretKeyRef:
+                  key: DB_Password
+                  name: prod-db
         ```
 
-
+    1.  Test this by pressing the `prod-web` button above the terminal. After you apply the network policy next, this will no longer work
 
     </details>
 
@@ -242,9 +254,9 @@ Do the tasks in this order:
       ingress:
         - from:
             - podSelector: {}                        # any pod...
-            - namespaceSelector:
+              namespaceSelector:
                 matchLabels:
-                  kubernetes.io/metadata.name: prod  # ...only in prod namespace
+                  kubernetes.io/metadata.name: prod  # ...that is only in prod namespace
     ```
     </details>
 
@@ -395,9 +407,9 @@ done
 
 kubectl create secret generic prod-db -n prod $secrets
 
-#delete env and replace with envFrom
+# Patch environment to get secret keys
 kubectl patch deployment -n prod prod-web --type json \
-  -p '[{"op": "remove", "path": "/spec/template/spec/containers/0/env"},{"op": "add", "path": "/spec/template/spec/containers/0/envFrom", "value": [{"secretRef":{"name": "prod-db"}}]}]'
+  -p '[{"op": "remove", "path": "/spec/template/spec/containers/0/env"},{"op": "add", "path": "/spec/template/spec/containers/0/env", "value": [{"name":"DB_User","valueFrom":{"secretKeyRef":{"key":"DB_User","name":"prod-db"}}},{"name":"DB_Host","valueFrom":{"secretKeyRef":{"key":"DB_Host","name":"prod-db"}}},{"name":"DB_Password","valueFrom":{"secretKeyRef":{"key":"DB_Password","name":"prod-db"}}}]}]'
 
 # Wait for rollout
 kubectl rollout status deployment -n prod prod-web --timeout=90s
@@ -416,7 +428,7 @@ spec:
   ingress:
     - from:
         - podSelector: {}
-        - namespaceSelector:
+          namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: prod
 EOF
